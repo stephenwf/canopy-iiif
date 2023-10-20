@@ -24,7 +24,7 @@
     "@page-blocks/next": "0.0.3",
     "@page-blocks/react": "0.0.3",
     "@page-blocks/react-client": "0.0.3",
-    "@page-blocks/react-editor": "0.0.3",
+    "@page-blocks/react-editor": "0.0.4",
     "@page-blocks/screenshots": "0.0.3",
     "@page-blocks/web-components": "0.0.3",
     "@radix-ui/colors": "^0.1.9",
