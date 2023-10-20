@@ -1,28 +1,31 @@
-import { ArrowRightIcon, GitHubLogoIcon } from "@radix-ui/react-icons";
+import { ArrowRightIcon, GitHubLogoIcon } from '@radix-ui/react-icons';
 
-import Button from "../components/Shared/Button/Button";
-import { ButtonWrapper } from "../components/Shared/Button/Button.styled";
-import { CanopyEnvironment } from "@customTypes/canopy";
-import Container from "@components/Shared/Container";
-import FACETS from "@.canopy/facets.json";
-import Heading from "../components/Shared/Heading/Heading";
-import Hero from "@components/Hero/Hero";
-import { HeroWrapper } from "../components/Hero/Hero.styled";
-import Layout from "@components/layout";
-import { LocaleString } from "@hooks/useLocale";
-import React from "react";
-import Related from "../components/Related/Related";
-import { canopyManifests } from "@lib/constants/canopy";
-import { createCollection } from "../lib/iiif/constructors/collection";
-import { getRelatedFacetValue } from "../lib/iiif/constructors/related";
-import { useCanopyState } from "@context/canopy";
+import Button from '../components/Shared/Button/Button';
+import { ButtonWrapper } from '../components/Shared/Button/Button.styled';
+import { CanopyEnvironment } from '@customTypes/canopy';
+import Container from '@components/Shared/Container';
+import FACETS from '@.canopy/facets.json';
+import Heading from '../components/Shared/Heading/Heading';
+import Hero from '@components/Hero/Hero';
+import { HeroWrapper } from '../components/Hero/Hero.styled';
+import Layout from '@components/layout';
+import { LocaleString } from '@hooks/useLocale';
+import React from 'react';
+import Related from '../components/Related/Related';
+import { canopyManifests } from '@lib/constants/canopy';
+import { createCollection } from '../lib/iiif/constructors/collection';
+import { getRelatedFacetValue } from '../lib/iiif/constructors/related';
+import { useCanopyState } from '@context/canopy';
+import { Slot, SlotContext } from '../blocks/directory';
+import { fileSystemLoader } from '@src/blocks/server';
 
 interface IndexProps {
   featuredItem: any;
   collections: string[];
+  slots: any;
 }
 
-const Index: React.FC<IndexProps> = ({ featuredItem, collections }) => {
+const Index: React.FC<IndexProps> = ({ featuredItem, collections, slots }) => {
   const { canopyState } = useCanopyState();
   const {
     config: { baseUrl },
@@ -36,7 +39,7 @@ const Index: React.FC<IndexProps> = ({ featuredItem, collections }) => {
         homepage: [
           {
             id: `${baseUrl}/works/`,
-            type: "Text",
+            type: 'Text',
             label: item.label,
           },
         ],
@@ -46,58 +49,39 @@ const Index: React.FC<IndexProps> = ({ featuredItem, collections }) => {
 
   return (
     <Layout>
-      <HeroWrapper>
-        <Hero collection={hero} />
-      </HeroWrapper>
-      <Container>
-        <Heading as="h2">About Canopy</Heading>
-        <div>
-          <p>
-            <strong>Canopy IIIF</strong> is a purely{" "}
-            <a href="https://iiif.io/">IIIF</a> sourced site generator using
-            Next.js. Canopy is an experimental application that will standup a
-            browseable and searchable digital collections style site entirely
-            from a{" "}
-            <a href="https://iiif.io/api/presentation/3.0/#51-collection">
-              IIIF Collection
-            </a>{" "}
-            and the resources it references.
-          </p>
-          <ButtonWrapper>
-            <Button href="/about" buttonType="primary">
-              Read More &nbsp;
-              <ArrowRightIcon />
-            </Button>
-            <Button
-              href="https://github.com/canopy-iiif/canopy-iiif"
-              buttonType="secondary"
-            >
-              View Code &nbsp;
-              <GitHubLogoIcon />
-            </Button>
-          </ButtonWrapper>
-        </div>
-        <Related
-          collections={collections}
-          title={LocaleString("homepageHighlightedWorks")}
-        />
-      </Container>
+      <SlotContext cache={slots}>
+        <HeroWrapper>
+          <Hero collection={hero} />
+        </HeroWrapper>
+        <Container>
+          <Slot name="homepage-header">
+            <Slot.About
+              title="About Canopy"
+              description={`<strong>Canopy IIIF</strong> is a purely <a href="https://iiif.io/">IIIF</a> [...]`}
+              primaryButtonLabel="Read More"
+              primaryButtonLink="/about"
+              secondaryButtonLabel="View Code"
+              secondaryButtonLink="https://github.com/canopy-iiif/canopy-iiif"
+            />
+          </Slot>
+
+          <Related collections={collections} title={LocaleString('homepageHighlightedWorks')} />
+        </Container>
+      </SlotContext>
     </Layout>
   );
 };
 
 export async function getStaticProps() {
+  const slots = await fileSystemLoader.query({}, ['homepage-header']);
+
   const manifests = canopyManifests();
 
   // @ts-ignore
-  const { featured, metadata, baseUrl } = process.env
-    ?.CANOPY_CONFIG as unknown as CanopyEnvironment;
+  const { featured, metadata, baseUrl } = process.env?.CANOPY_CONFIG as unknown as CanopyEnvironment;
 
-  const randomFeaturedItem =
-    manifests[Math.floor(Math.random() * manifests.length)];
-  const featuredItem = await createCollection(
-    featured ? featured : [randomFeaturedItem.id]
-  );
+  const randomFeaturedItem = manifests[Math.floor(Math.random() * manifests.length)];
+  const featuredItem = await createCollection(featured ? featured : [randomFeaturedItem.id]);
 
   const collections = FACETS.map((facet) => {
     const value = getRelatedFacetValue(facet.label);
@@ -105,7 +89,7 @@ export async function getStaticProps() {
   });
 
   return {
-    props: { metadata, featuredItem, collections },
+    props: { metadata, featuredItem, collections, slots },
     revalidate: 3600,
   };
 }

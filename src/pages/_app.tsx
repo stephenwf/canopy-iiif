@@ -1,26 +1,31 @@
-import { CanopyEnvironment, CanopyLocale } from "@customTypes/canopy";
-import { CanopyProvider, defaultState } from "../context/canopy";
-import React, { useEffect, useState } from "react";
-import { dm_sans, dm_serif_display } from "../styles/theme/fonts";
-import { getDefaultLang, getLocale } from "@hooks/useLocale";
+import { CanopyEnvironment, CanopyLocale } from '@customTypes/canopy';
+import { CanopyProvider, defaultState } from '../context/canopy';
+import React, { useEffect, useState } from 'react';
+import { dm_sans, dm_serif_display } from '../styles/theme/fonts';
+import { getDefaultLang, getLocale } from '@hooks/useLocale';
+import { AppProps } from 'next/app';
 
-import { AppProps } from "next/app";
-import COLLECTIONS from "@.canopy/collections.json";
-import { NextSeo } from "next-seo";
-import { ObjectLiteral } from "@customTypes/index";
-import { ThemeProvider } from "next-themes";
-import { buildDefaultSEO } from "@lib/seo";
-import { darkTheme } from "../styles/stitches";
-import globalStyles from "../styles/global";
+import COLLECTIONS from '@.canopy/collections.json';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { NextSeo } from 'next-seo';
+import { ObjectLiteral } from '@customTypes/index';
+import { ThemeProvider } from 'next-themes';
+import { buildDefaultSEO } from '@lib/seo';
+import { darkTheme } from '../styles/stitches';
+import globalStyles from '../styles/global';
+import { BlockEditor } from '../blocks/block-editor.lazy';
+
+import '@page-blocks/react/dist/index.css';
+import '@page-blocks/react-editor/dist/index.css';
+import '@page-blocks/web-components/dist/index.css';
 
 interface CanopyAppProps extends AppProps {
   pageProps: ObjectLiteral;
 }
 
-export default function CanopyAppProps({
-  Component,
-  pageProps,
-}: CanopyAppProps) {
+export const queryClient = new QueryClient();
+
+export default function CanopyAppProps({ Component, pageProps }: CanopyAppProps) {
   globalStyles();
 
   const config = process.env.CANOPY_CONFIG as unknown as CanopyEnvironment;
@@ -61,26 +66,29 @@ export default function CanopyAppProps({
         }
       `}</style>
       <NextSeo {...seo} />
-      <ThemeProvider
-        attribute="class"
-        defaultTheme={theme.defaultTheme ? theme.defaultTheme : "light"}
-        value={{
-          dark: darkTheme.className,
-          light: "light",
-        }}
-      >
-        {locale && (
-          <CanopyProvider
-            initialState={{
-              ...defaultState,
-              config: config,
-              locale: locale,
-            }}
-          >
-            {mounted && <Component {...pageProps} />}
-          </CanopyProvider>
-        )}
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={theme.defaultTheme ? theme.defaultTheme : 'light'}
+          value={{
+            dark: darkTheme.className,
+            light: 'light',
+          }}
+        >
+          {locale && (
+            <CanopyProvider
+              initialState={{
+                ...defaultState,
+                config: config,
+                locale: locale,
+              }}
+            >
+              {mounted && <Component {...pageProps} />}
+              {process.env.NODE_ENV !== 'production' ? <BlockEditor showToggle /> : null}
+            </CanopyProvider>
+          )}
+        </ThemeProvider>
+      </QueryClientProvider>
     </>
   );
 }
